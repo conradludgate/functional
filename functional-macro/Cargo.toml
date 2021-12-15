@@ -7,7 +7,6 @@ edition = "2021"
 proc-macro = true
 
 [dependencies]
-functional-syn = { version = "=1.0.83", path = "../functional-syn" }
+syn = { version = "1.0", features = ["full", "visit-mut", "extra-traits"]}
 proc-macro2 = "1.0"
 quote = "1.0"
-rand = "0.8.4"

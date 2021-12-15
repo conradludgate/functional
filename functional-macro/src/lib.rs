@@ -1,38 +1,20 @@
-use functional_syn::{
+use proc_macro::TokenStream;
+use quote::ToTokens;
+use syn::{
     parse_macro_input, parse_quote,
     visit_mut::{visit_expr_mut, VisitMut},
-    BinOp, Expr, ExprBinary, Stmt, Block, parse::Parse, Result,
+    BinOp, Expr, ExprBinary, Item,
 };
-use proc_macro::TokenStream;
-use quote::quote;
 
-#[proc_macro]
-pub fn pipe(input: TokenStream) -> TokenStream {
-    let Stmts { mut stmts } = parse_macro_input!(input as Stmts);
+#[proc_macro_attribute]
+pub fn pipe(_args: TokenStream, input: TokenStream) -> TokenStream {
+    let mut item = parse_macro_input!(input as Item);
     // dbg!(&expr);
-    Visitor.visit(&mut stmts);
-    quote!{ {#(#stmts)*} }.into()
-}
-
-struct Stmts {
-    pub stmts: Vec<Stmt>,
-}
-
-impl Parse for Stmts {
-    fn parse(input: functional_syn::parse::ParseStream) -> Result<Self> {
-        Ok(Stmts {
-            stmts: Block::parse_within(input)?,
-        })
-    }
+    Visitor.visit_item_mut(&mut item);
+    item.into_token_stream().into()
 }
 
 struct Visitor;
-
-impl Visitor {
-    fn visit(&mut self, stmts: &mut [Stmt]) {
-        stmts.iter_mut().for_each(|stmt| self.visit_stmt_mut(stmt));
-    }
-}
 
 impl VisitMut for Visitor {
     fn visit_expr_mut(&mut self, i: &mut Expr) {
@@ -42,7 +24,7 @@ impl VisitMut for Visitor {
                 left,
                 op,
                 right,
-            }) if matches!(op, BinOp::Pipe(_)) => {
+            }) if matches!(op, BinOp::Shr(_)) => {
                 for it in attrs {
                     self.visit_attribute_mut(it);
                 }
